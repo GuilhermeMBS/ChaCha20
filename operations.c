@@ -80,19 +80,19 @@ void chacha20_block(uint32_t* state, uint8_t* key, uint8_t* block, uint8_t* nonc
 
     create_state(state, key, block, nonce);
 
-    printf("\nINITIAL STATE:");
-    print_state(state);
+    // printf("\n\nINITIAL STATE:");
+    // print_state(state);
     
     uint32_t initial_state[16];
     for (int i = 0; i < 16; i++) initial_state[i] = state[i]; // initial_state = state
 
     for (int i = 0; i < 10; i++) inner_block(state);
-    printf("\n\nstate AFTER 20 ROUNDS:");
-    print_state(state);
+    // printf("\n\nSTATE AFTER 20 ROUNDS:");
+    // print_state(state);
 
     for (int i = 0; i < 16; i++) state[i] += initial_state[i];
-    printf("\n\nFINAL STATE:");
-    print_state(state);
+    // printf("\n\nFINAL STATE:");
+    // print_state(state);
 
     return;
 }

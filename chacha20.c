@@ -1,4 +1,5 @@
-#include "operations.c"
+#include "operations.h"
+#include "serialization.h"
 
 #define MATRIX_SIZE 16
 #define KEY_SIZE 32
@@ -22,7 +23,7 @@ int main(void) {
     };
 
     uint8_t nonce[NONCE_SIZE] = {
-        0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x4a, 
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4a, 
         0x00, 0x00, 0x00, 0x00
     };
 
@@ -30,5 +31,9 @@ int main(void) {
 
     chacha20_block(state, key, block, nonce);
     
+    FILE* fin = fopen("reverse_plaintext.bin", "r");
+    FILE* fout = fopen("reverse_ciphertext.bin", "w");
+    chacha20_encrypt(key, block, nonce, fin, fout);
+
     return 0;
 }
