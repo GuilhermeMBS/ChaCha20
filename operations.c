@@ -1,6 +1,20 @@
 #include "operations.h"
 
 
+void add_block(uint8_t* block) {
+    block[0]++;
+
+    if (block[0] == 0) {
+        block[1]++;
+        if (block[1] == 0) {
+            block[2]++;
+            if (block[2] == 0) block[3]++;
+        }
+    }
+
+    return;
+}
+
 void input2state(uint32_t* state, uint8_t* in, int size, int pos) {
     for (int i = 0; i < size; i++) {
         int index = i/4; // The index of the 4-bytes block from the input

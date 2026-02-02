@@ -35,5 +35,8 @@ int main(void) {
     FILE* fout = fopen("reverse_ciphertext.bin", "w");
     chacha20_encrypt(key, block, nonce, fin, fout);
 
+    fclose(fin);
+    fclose(fout);
+    
     return 0;
 }

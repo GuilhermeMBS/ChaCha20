@@ -2,6 +2,8 @@
 #include <stdint.h>
 
 
+void add_block(uint8_t* block);
+
 void input2state(uint32_t* state, uint8_t* in, int size, int pos);
 
 void create_state(uint32_t* state, uint8_t* key, uint8_t* block, uint8_t* nonce);

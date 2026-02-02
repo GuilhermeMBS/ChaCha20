@@ -2,10 +2,13 @@
 
 
 void serialize_state(uint32_t* state, uint8_t* key_stream) {
+    uint32_t mask[16] = { 0 };
+    for (int i = 0; i < 16; i++) mask[i] = state[i];
+
     for (int i = 0; i < 64; i++) {
         int index = i/4;
-        key_stream[i] |= state[index] & 0xFF;
-        state[index] >>= 8;
+        key_stream[i] |= mask[index] & 0xFF;
+        mask[index] >>= 8;
     }
 
     return;
@@ -42,7 +45,7 @@ void chacha20_encrypt(uint8_t* key, uint8_t* block, uint8_t* nonce, FILE* plaint
             }
 
             counter = 0;
-            (*(uint32_t*)block)++;
+            add_block(block);
         }
 
     }
