@@ -2,11 +2,11 @@
 #include <stdint.h>
 
 
-void add_block(uint8_t* block);
+void add_counter(uint8_t* counter);
 
 void input2state(uint32_t* state, uint8_t* in, int size, int pos);
 
-void create_state(uint32_t* state, uint8_t* key, uint8_t* block, uint8_t* nonce);
+void create_state(uint32_t* state, uint8_t* key, uint8_t* counter, uint8_t* nonce);
 
 void print_state(uint32_t* state);
 
@@ -16,8 +16,8 @@ void qround(uint32_t* state, uint32_t a, uint32_t b, uint32_t c, uint32_t d);
 
 void inner_block(uint32_t* state);
 
-void chacha20_block(uint32_t* state, uint8_t* key, uint8_t* block, uint8_t* nonce);
+void chacha20_block(uint32_t* state, uint8_t* key, uint8_t* counter, uint8_t* nonce);
 
 void serialize_state(uint32_t* state, uint8_t* key_stream);
 
-void chacha20_encrypt(uint8_t* key, uint8_t* block, uint8_t* nonce, FILE* plaintext, FILE* encrypted_message);
+void chacha20_encrypt(uint8_t* key, uint8_t* counter, uint8_t* nonce, FILE* plaintext, FILE* encrypted_message);

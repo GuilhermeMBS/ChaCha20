@@ -1,5 +1,4 @@
-#include "operations.h"
-#include "serialization.h"
+#include "src/chacha.h"
 
 #define MATRIX_SIZE 16
 #define KEY_SIZE 32
@@ -31,8 +30,8 @@ int main(void) {
 
     chacha20_block(state, key, block, nonce);
     
-    FILE* fin = fopen("reverse_plaintext.bin", "r");
-    FILE* fout = fopen("reverse_ciphertext.bin", "w");
+    FILE* fin = fopen("plaintext.bin", "r");
+    FILE* fout = fopen("ciphertext.bin", "w");
     chacha20_encrypt(key, block, nonce, fin, fout);
 
     fclose(fin);

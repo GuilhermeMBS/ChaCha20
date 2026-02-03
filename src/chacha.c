@@ -22,10 +22,9 @@ void input2state(uint32_t* state, uint8_t* in, int size, int pos) {
 }
 
 
-void create_state(uint32_t* state, uint8_t* key, uint8_t* block, uint8_t* nonce)  {
-    
+void create_state(uint32_t* state, uint8_t* key, uint8_t* counter, uint8_t* nonce)  {
     input2state(state, key, 32, 4);
-    input2state(state, block, 4, 12);
+    input2state(state, counter, 4, 12);
     input2state(state, nonce, 12, 13);
     
     return;
@@ -86,10 +85,8 @@ void inner_block(uint32_t* state) {
 }
 
 
-void chacha20_block(uint32_t* state, uint8_t* key, uint8_t* block, uint8_t* nonce) {
-
-    create_state(state, key, block, nonce);
-
+void chacha20_block(uint32_t* state, uint8_t* key, uint8_t* counter, uint8_t* nonce) {
+    create_state(state, key, counter, nonce);
     // printf("\n\nINITIAL STATE:");
     // print_state(state);
     
@@ -122,42 +119,12 @@ void serialize_state(uint32_t* state, uint8_t* key_stream) {
 }
 
 
-void chacha20_encrypt(uint8_t* key, uint8_t* block, uint8_t* nonce, FILE* plaintext, FILE* encrypted_message) {
-    uint8_t data_stream[64] = { 0 };
+void chacha20_encrypt(uint8_t* key, uint8_t* counter, uint8_t* nonce, FILE* plaintext, FILE* encrypted_message) {
     uint8_t key_stream[64] = { 0 };
-
-    int counter = 0;
-    int character;
+    uint8_t buffer[4096]; // Standard memory page size
+    int bytes_read;
     
-    while ((character = fgetc(plaintext)) != EOF) {
-        
-        data_stream[counter++] = character;
-
-        if (counter == 64) {
-            uint32_t state[16] = {
-                0x61707865, 0x3320646e, 0x79622d32, 0x6b206574,
-                0x00000000, 0x00000000, 0x00000000, 0x00000000,
-                0x00000000, 0x00000000, 0x00000000, 0x00000000,
-                0x00000000, 0x00000000, 0x00000000, 0x00000000,
-            };
-
-            chacha20_block(state, key, block, nonce);
-            serialize_state(state, key_stream);
-           
-            for (int i = 0; i < 64; i++) {
-                key_stream[i] ^= data_stream[i];
-                fputc(key_stream[i], encrypted_message);
-                key_stream[i] = 0;
-                data_stream[i] = 0;
-            }
-
-            counter = 0;
-            add_block(block);
-        }
-
-    }
-
-    if (counter != 0) {
+    while ((bytes_read = fread(buffer, 1, 64, plaintext)) > 0) {
         uint32_t state[16] = {
             0x61707865, 0x3320646e, 0x79622d32, 0x6b206574,
             0x00000000, 0x00000000, 0x00000000, 0x00000000,
@@ -165,20 +132,14 @@ void chacha20_encrypt(uint8_t* key, uint8_t* block, uint8_t* nonce, FILE* plaint
             0x00000000, 0x00000000, 0x00000000, 0x00000000,
         };
 
-        chacha20_block(state, key, block, nonce);
+        chacha20_block(state, key, counter, nonce);
         serialize_state(state, key_stream);
-        
-        for (int i = 0; i < counter; i++) {
-            key_stream[i] ^= data_stream[i];
-            fputc(key_stream[i], encrypted_message);
-            key_stream[i] = 0;
-            data_stream[i] = 0;
-        }
+           
+        for (int i = 0; i < 64; i++) buffer[i] ^= key_stream[i];
 
-        counter = 0;
-        (*(uint32_t*)block)++;
+        fwrite(buffer, 1, bytes_read, encrypted_message);
+        add_counter(counter);
     }
-
 
     return;
 }
