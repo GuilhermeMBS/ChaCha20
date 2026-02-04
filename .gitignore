@@ -1,0 +1,14 @@
+# Object files (compiled chunks)
+*.o
+
+# Executables (Windows & Unix)
+*.exe
+*.out
+chacha20
+
+# Binary output files (from your tests)
+*.bin
+
+# OS generated files (Optional but recommended)
+.DS_Store
+Thumbs.db

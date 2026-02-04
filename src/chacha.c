@@ -5,6 +5,7 @@ static inline uint32_t rotate(uint32_t a, int n) {
     return (a << n) | (a >> (32 - n));
 }
 
+// Performs the ChaCha Quarter Round operation.
 static inline void qround(uint32_t* state, uint32_t a, uint32_t b, uint32_t c, uint32_t d)  {
     state[a] += state[b];
     state[d] ^= state[a];
@@ -23,11 +24,12 @@ static inline void qround(uint32_t* state, uint32_t a, uint32_t b, uint32_t c, u
     state[b] = rotate(state[b], 7);
 }
 
-static void load_little_endian(uint32_t* state, uint8_t* in, int size, int pos) {
+// Inserts the array of 1-byte elements as 4-bytes little endian elements into the state matrix starting from position `pos`.
+static void load_little_endian(uint32_t* state, uint8_t* input, int size, int pos) {
     for (int i = 0; i < size; i++) {
         int index = i/4; // The index of the 4-bytes block from the input
         state[pos + index] <<= 8; // pos = offset of the state matrix
-        state[pos + index] |= in[index*4 + 3 - i%4]; // Insert Backwards
+        state[pos + index] |= input[index*4 + 3 - i%4]; // Insert Backwards
     }
 }
 
@@ -56,6 +58,14 @@ static void serialize_state(uint32_t* state, uint8_t* key_stream) {
     }
 }
 
+/**
+ * Generates the next 64-byte block of keystream.
+ * 1. Copies the internal state to a working state.
+ * 2. Runs 20 rounds (10 iterations of inner_block).
+ * 3. Adds the original state to the working state.
+ * 4. Serializes the result into the context's keystream buffer.
+ * 5. Increments the block counter.
+ */
 static void generate_block(chacha20_ctx* ctx) {
     uint32_t working_state[16];
 
@@ -75,6 +85,7 @@ void chacha20_wipe(chacha20_ctx* ctx) {
     ctx->keystream_idx = 0;
 }
 
+// Just create the state matrix of the context, but does not serialize it
 void chacha20_init(chacha20_ctx* ctx, uint8_t* key, uint8_t* counter, uint8_t* nonce) {
     chacha20_wipe(ctx);
 
@@ -88,7 +99,7 @@ void chacha20_init(chacha20_ctx* ctx, uint8_t* key, uint8_t* counter, uint8_t* n
     load_little_endian(ctx->state, counter, 4, 12);
     load_little_endian(ctx->state, nonce, 12, 13);
 
-    ctx->keystream_idx = 64; // So the first call forces a new block generation
+    ctx->keystream_idx = 64; // So the first call forces a new block generation (serialization + block update)
 }
 
 void chacha20_update(chacha20_ctx* ctx, uint8_t* input, uint8_t* output, size_t length) {    

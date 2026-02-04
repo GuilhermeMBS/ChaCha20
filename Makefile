@@ -7,7 +7,6 @@ CFLAGS = -Wall -Wextra -g -Isrc
 TARGET = chacha20
 
 # Object files 
-# We explicitly tell Make that chacha.o lives inside src/
 OBJS = main.o src/chacha.o
 
 # Default rule
