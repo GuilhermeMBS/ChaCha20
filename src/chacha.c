@@ -1,27 +1,6 @@
 #include "chacha.h"
 
 
-static void increment_counter(uint8_t* counter_bytes) {
-    uint32_t t = 0;
-    for (int i = 0; i < 4; i++) t |= ((uint32_t)counter_bytes[i]) << (8 * i);
-    t++;
-    for (int i = 0; i < 4; i++) counter_bytes[i] = (t >> (8 * i)) & 0xFF;
-}
-
-static void load_little_endian(uint32_t* state, uint8_t* in, int size, int pos) {
-    for (int i = 0; i < size; i++) {
-        int index = i/4; // The index of the 4-bytes block from the input
-        state[pos + index] <<= 8; // pos = offset of the state matrix
-        state[pos + index] |= in[index*4 + 3 - i%4]; // Insert Backwards
-    }
-}
-
-static void init_state(uint32_t* state, uint8_t* key, uint8_t* counter, uint8_t* nonce)  {
-    load_little_endian(state, key, 32, 4);
-    load_little_endian(state, counter, 4, 12);
-    load_little_endian(state, nonce, 12, 13);
-}
-
 static inline uint32_t rotate(uint32_t a, int n) {
     return (a << n) | (a >> (32 - n));
 }
@@ -44,6 +23,28 @@ static inline void qround(uint32_t* state, uint32_t a, uint32_t b, uint32_t c, u
     state[b] = rotate(state[b], 7);
 }
 
+static void load_little_endian(uint32_t* state, uint8_t* in, int size, int pos) {
+    for (int i = 0; i < size; i++) {
+        int index = i/4; // The index of the 4-bytes block from the input
+        state[pos + index] <<= 8; // pos = offset of the state matrix
+        state[pos + index] |= in[index*4 + 3 - i%4]; // Insert Backwards
+    }
+}
+
+static void chacha20_init(chacha20_ctx* ctx, uint8_t* key, uint8_t* counter, uint8_t* nonce) {
+    // Constants "expand 32-byte k"
+    ctx->state[0] = 0x61707865;
+    ctx->state[1] = 0x3320646e;
+    ctx->state[2] = 0x79622d32;
+    ctx->state[3] = 0x6b206574;
+
+    load_little_endian(ctx->state, key, 32, 4);
+    load_little_endian(ctx->state, counter, 4, 12);
+    load_little_endian(ctx->state, nonce, 12, 13);
+
+    ctx->keystream_idx = 64; // So the first call forces a new block generation
+}
+
 static void inner_block(uint32_t* state) {
     // Columns
     qround(state, 0, 4, 8, 12);
@@ -58,17 +59,8 @@ static void inner_block(uint32_t* state) {
     qround(state, 3, 4, 9, 14);
 }
 
-static void chacha20_block(uint32_t* state, uint8_t* key, uint8_t* counter, uint8_t* nonce) {
-    init_state(state, key, counter, nonce);
-    uint32_t initial_state[16];
-
-    for (int i = 0; i < 16; i++) initial_state[i] = state[i]; 
-    for (int i = 0; i < 10; i++) inner_block(state);
-    for (int i = 0; i < 16; i++) state[i] += initial_state[i];
-}
-
 static void serialize_state(uint32_t* state, uint8_t* key_stream) {
-    uint32_t mask[16] = { 0 };
+    uint32_t mask[16];
     for (int i = 0; i < 16; i++) mask[i] = state[i];
 
     for (int i = 0; i < 64; i++) {
@@ -78,25 +70,33 @@ static void serialize_state(uint32_t* state, uint8_t* key_stream) {
     }
 }
 
-void chacha20_encrypt(uint8_t* key, uint8_t* counter, uint8_t* nonce, FILE* plaintext, FILE* encrypted_message) {
-    uint8_t key_stream[64] = { 0 };
-    uint8_t buffer[4096]; // Standard memory page size
-    int bytes_read;
+static void generate_block(chacha20_ctx* ctx) {
+    uint32_t working_state[16];
+    memcpy(working_state, ctx->state, sizeof(working_state));
+
+    for (int i = 0; i < 10; i++) inner_block(working_state);
+    for (int i = 0; i < 16; i++) working_state[i] += ctx->state[i];
+
+    serialize_state(working_state, ctx->keystream);
+    ctx->state[12]++;
     
-    while ((bytes_read = fread(buffer, 1, 64, plaintext)) > 0) {
-        uint32_t state[16] = {
-            0x61707865, 0x3320646e, 0x79622d32, 0x6b206574,
-            0x00000000, 0x00000000, 0x00000000, 0x00000000,
-            0x00000000, 0x00000000, 0x00000000, 0x00000000,
-            0x00000000, 0x00000000, 0x00000000, 0x00000000,
-        };
+    ctx->keystream_idx = 0;
+}
 
-        chacha20_block(state, key, counter, nonce);
-        serialize_state(state, key_stream);
-           
-        for (int i = 0; i < 64; i++) buffer[i] ^= key_stream[i];
+void chacha20_encrypt(uint8_t* key, uint8_t* counter, uint8_t* nonce, FILE* plaintext, FILE* encrypted_message) {
+    chacha20_ctx ctx;
+    chacha20_init(&ctx, key, counter, nonce);
 
-        fwrite(buffer, 1, bytes_read, encrypted_message);
-        increment_counter(counter);
+    uint8_t input_buffer[64];
+    int bytes_read;
+
+    while ((bytes_read = fread(input_buffer, 1, 64, plaintext)) > 0) {
+        for (int i = 0; i < bytes_read; i++) {
+            if (ctx.keystream_idx == 64) generate_block(&ctx);
+            input_buffer[i] ^= ctx.keystream[ctx.keystream_idx];
+            ctx.keystream_idx++;
+        }
+
+        fwrite(input_buffer, 1, bytes_read, encrypted_message);
     }
 }

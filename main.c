@@ -1,7 +1,7 @@
 #include "src/chacha.h"
 
 
-int main(void) {    
+int main(void) {
     uint8_t key[KEY_SIZE] = {
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
         0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
@@ -14,13 +14,13 @@ int main(void) {
     };
     uint8_t block[COUNTER_SIZE] = {1, 0, 0, 0};
 
-    FILE* fin = fopen("tests/reverse_plaintext.bin", "rb");
+    FILE* fin = fopen("tests/plaintext.bin", "rb");
     if (fin == NULL) {
         printf("Error: Could not open input file!\n");
         return 1;
     }
 
-    FILE* fout = fopen("tests/reverse_ciphertext.bin", "wb");
+    FILE* fout = fopen("tests/ciphertext.bin", "wb");
     if (fout == NULL) {
         printf("Error: Could not open output file!\n");
         fclose(fin);
