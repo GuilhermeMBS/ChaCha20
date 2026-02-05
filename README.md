@@ -78,7 +78,7 @@ make clean
 ## 🧪 Testing & Validation
 ### 1. **Encryption Test**
 
-The `tests/` folder contains the "Sunscreen" example data directly from the RFC standard (**2.4.2**) in `plaintext.bin`.
+The `tests/` folder contains the "Sunscreen" example data directly from the RFC standard (**section 2.4.2**) in `plaintext.bin`.
 By default, `main.c` reads this file and generates `tests/ciphertext.bin`.
 
 To verify correctness, compare your output against the official RFC hex sequence:
@@ -87,7 +87,7 @@ To verify correctness, compare your output against the official RFC hex sequence
 
 Your output must match this sequence exactly:
 
-```bash
+```text
 Ciphertext (Hex)
 000  6e 2e 35 9a 25 68 f9 80 41 ba 07 28 dd 0d 69 81
 010  e9 7e 7a ec 1d 43 60 c2 0a 27 af cc fd 9f ae 0b
