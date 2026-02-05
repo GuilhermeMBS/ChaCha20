@@ -28,13 +28,13 @@ int main(void) {
 
     uint8_t counter[4] = {1, 0, 0, 0};
 
-    FILE* fin = fopen("tests/plaintext.bin", "rb");
+    FILE* fin = fopen("tests/ciphertext.bin", "rb");
     if (fin == NULL) {
         printf("Error: Could not open input file!\n");
         return 1;
     }
 
-    FILE* fout = fopen("tests/ciphertext.bin", "wb");
+    FILE* fout = fopen("tests/plaintext.bin", "wb");
     if (fout == NULL) {
         printf("Error: Could not open output file!\n");
         fclose(fin);
