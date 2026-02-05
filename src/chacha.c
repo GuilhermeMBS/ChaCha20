@@ -48,7 +48,7 @@ static void inner_block(uint32_t* state) {
 }
 
 static void serialize_state(uint32_t* state, uint8_t* key_stream) {
-    uint32_t mask[16];
+    uint32_t mask[16] = { 0 };
     for (int i = 0; i < 16; i++) mask[i] = state[i];
 
     for (int i = 0; i < 64; i++) {
