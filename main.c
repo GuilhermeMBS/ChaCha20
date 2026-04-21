@@ -31,6 +31,7 @@ int main(void) {
     FILE* fin = fopen("tests/plaintext.bin", "rb");
     if (fin == NULL) {
         printf("Error: Could not open input file!\n");
+        fclose(fin);
         return 1;
     }
 
